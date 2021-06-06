@@ -10,8 +10,9 @@ struct GameObjInf {
     float3 position;
     float3 velocity;
     float speed;
-
-
+    float3 Separation;
+    float3 Alignment;
+    float3 Cohesion;
 };
 
 RWStructuredBuffer<GameObjInf> ResultBoid;
@@ -32,7 +33,9 @@ float3 sumCohe = float3(0, 0, 0);
 
 float maxspeed = 2;
 
-float counter=0;
+float counterSep=0;
+float counterAlign =0;
+float counterCohe=0;
 float deltaTime;
 float numObjs;
 
@@ -55,11 +58,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             diff = diff / d;
 
             steerSep = steerSep + diff;
-            counter++;
+            counterSep++;
+        }
+
+        if (d > 0 && d < 5.f) {
+            sumAlign = sumAlign + ResultBoid[i].velocity;
+            counterAlign++;
+
+            sumCohe = sumCohe + ResultBoid[i].position;
+            counterCohe++;
         }
     }
-    if (counter > 0) {
-        steerSep = steerSep / counter;
+    if (counterSep > 0) {
+        steerSep = steerSep / counterSep;
     }
 
     if (length(steerSep) > 0 ) {
@@ -75,25 +86,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     //------------------------------------------
     //Aligment
     //------------------------------------------
-    counter = 0;
-    
 
-    for (int j = 0; j < numObjs; j++) {
-
-        d = distance(ResultBoid[id.x].position, ResultBoid[j].position);
-
-        if (d > 0 && d < 5.f) {
-            sumAlign = sumAlign + ResultBoid[j].velocity;
-            counter++;
-        }
-    }
-
-    if (counter > 0 ) {
-        sumAlign = sumAlign / (float)counter;
+    if (counterAlign > 0 ) {
+        sumAlign = sumAlign / counterAlign;
         normalize(sumAlign);
         sumAlign = sumAlign * 0.5f;
 
-        steerAlign = sumAlign;// -ResultBoid[id.x].velocity;
+        steerAlign = sumAlign;//-ResultBoid[id.x].velocity;
 
     }
     else {
@@ -103,20 +102,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     //------------------------------------------
     //Cohesion
     //------------------------------------------
-    counter = 0;
 
-    for (int k = 0; k < numObjs; k++) {
-
-        d = distance(ResultBoid[id.x].position, ResultBoid[k].position);
-
-        if (d > 0 && d <5.f) {
-            sumCohe = sumCohe + ResultBoid[k].position;
-            counter++;
-        }
-    }
-
-    if (counter > 0) {
-        sumCohe = sumCohe / (float)counter;
+    if (counterCohe > 0) {
+        sumCohe = sumCohe / counterCohe;
         
         desired = sumCohe - ResultBoid[id.x].position;
         normalize(desired);
@@ -124,7 +112,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
         steerCohe = desired; //- ResultBoid[id.x].velocity;//desired; //
 
-       
     }
     else {
         steerCohe = float3(0, 0, 0);
@@ -134,23 +121,25 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     //------------------------------------------
    //Target
    //------------------------------------------
-    desiredTarget = target - ResultBoid[id.x].position;
+    /*desiredTarget = target - ResultBoid[id.x].position;
     normalize(desiredTarget);
 
     
 
-    desiredTarget = desiredTarget * ResultBoid[id.x].speed;
+    desiredTarget = desiredTarget * ResultBoid[id.x].speed;*/
     //desiredTarget = desiredTarget - ResultBoid[id.x].velocity;
     
    //------------------------------------------
    //Aplication
    //------------------------------------------
-    ResultBoid[id.x].velocity = desiredTarget * 0.5f + steerSep* 7 + steerCohe + steerAlign;// +steerSep * 0.5f; + steerAlign + steerCohe;
+   // ResultBoid[id.x].velocity = desiredTarget * 0.2f + steerSep* 7 + steerCohe + steerAlign;// +steerSep * 0.5f; + steerAlign + steerCohe;
 
     
 
-    ResultBoid[id.x].position =  deltaTime * ResultBoid[id.x].velocity  + ResultBoid[id.x].position;
-
+   // ResultBoid[id.x].position =  deltaTime * ResultBoid[id.x].velocity  + ResultBoid[id.x].position;
+    ResultBoid[id.x].Separation = steerSep;
+    ResultBoid[id.x].Alignment = steerAlign;
+    ResultBoid[id.x].Cohesion = steerCohe;
     
 }
 

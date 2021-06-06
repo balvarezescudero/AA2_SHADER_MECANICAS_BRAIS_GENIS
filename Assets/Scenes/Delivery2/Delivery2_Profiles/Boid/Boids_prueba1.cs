@@ -9,6 +9,7 @@ public class Boids_prueba1 : MonoBehaviour
     public GameObject followTarget;
 
     public ComputeShader shader;
+    public bool Activate_Avoidance_Collision = false;
     // Start is called before the first frame update
 
     public int boidNumber = 5 ;
@@ -19,7 +20,7 @@ public class Boids_prueba1 : MonoBehaviour
     ComputeBuffer dataBuffer;
     boidObjInfo[] data;
 
-    Vector3[] velos;
+    Vector3[] velocity;
 
     void Start()
     {
@@ -33,16 +34,19 @@ public class Boids_prueba1 : MonoBehaviour
             {
 
                 GameObject inst = Instantiate(objeto, this.transform);
-                
-                if(i%2 == 0)
+
+                if (i % 2 ==0)
                 {
-                    inst.transform.position = this.transform.position + Vector3.up * i * 0.5f + Vector3.left * j * 0.7f;
+                    inst.transform.position = this.transform.position + Vector3.forward * i * 0.6f + Vector3.right * j * 0.6f;
                 }
                 else
                 {
-                    inst.transform.position = this.transform.position + Vector3.forward * i * 0.5f + Vector3.right * j * 0.7f;
+                    inst.transform.position = this.transform.position + Vector3.forward * j * 0.6f + Vector3.right * i * 0.6f;
                 }
-               
+                    
+
+                
+
                 objects.Add(inst);
 
             }
@@ -51,12 +55,21 @@ public class Boids_prueba1 : MonoBehaviour
         int numObjs = objects.Count;
 
         data = new boidObjInfo[numObjs];
-        velos = new Vector3[numObjs];
+        velocity = new Vector3[numObjs];
 
         for (int i =0; i < numObjs; i++)
         {
             data[i].position = objects[i].transform.position;
-            data[i].velocity =Vector3.up;
+            if (i%3==0)
+            {
+                data[i].velocity = velocity[i] = objects[i].transform.forward * 5;
+            }
+            else
+            {
+                data[i].velocity = velocity[i] = objects[i].transform.up * 5;
+            }
+           
+            
             data[i].speed = Random.Range(0.3f, 1f);
 
         }
@@ -67,6 +80,8 @@ public class Boids_prueba1 : MonoBehaviour
 
 
         generateRays();
+
+        print(numObjs);
     }
 
     // Update is called once per frame
@@ -90,9 +105,44 @@ public class Boids_prueba1 : MonoBehaviour
         //for each thread
         for(int i = 0; i < numObjs; i++)
         {
-            objects[i].transform.position = data[i].position;
+            //objects[i].transform.position = data[i].position;
 
-            objects[i].transform.rotation = RotateToSphere(objects[i].transform);
+            //Poner parametro
+
+            Vector3 separationForce =clampForce(data[i].Separation, velocity[i]) * 1.5f;
+            Vector3 alignmentForce = clampForce(data[i].Alignment, velocity[i]) * 1f;
+            Vector3 cohesionForce = clampForce(data[i].Cohesion, velocity[i]) * 1f;
+          //  Vector3 direcball = clampForce(followTarget.transform.position - objects[i].transform.position, velocity[i]) *2f;
+
+            Vector3 aceleration = Vector3.zero;
+            aceleration += separationForce;
+            aceleration += alignmentForce;
+            aceleration += cohesionForce;
+          // aceleration += direcball;
+
+            if (Activate_Avoidance_Collision)
+            {
+                if (collisionBoid(objects[i].transform))
+                {
+                    Vector3 dir = Avoid_Obstacles(objects[i]);
+                    Vector3 force = clampForce(dir, velocity[i]) * 40;
+
+                    aceleration += force;
+                }
+            }
+
+            velocity[i] += aceleration * Time.deltaTime;
+            float speed = velocity[i].magnitude;
+            Vector3 direction = velocity[i] / speed;
+            speed = Mathf.Clamp(speed, 1, 5);
+
+            velocity[i] = direction * speed;
+
+           objects[i].transform.position += velocity[i] * Time.deltaTime;
+
+           objects[i].transform.LookAt(objects[i].transform.position+velocity[i]);
+
+      
 
           
         }
@@ -108,19 +158,22 @@ public class Boids_prueba1 : MonoBehaviour
         public Vector3 position;
         public Vector3 velocity;
         public float speed;
+        public Vector3 Separation;
+        public Vector3 Alignment;
+        public Vector3 Cohesion;
 
         public static int Size
         {
             get
             {
-                return sizeof(float) * 7;
+                return sizeof(float) * 16;
             }
         }
     }
 
     private Quaternion RotateToSphere(Transform t)
     {
-        Vector3 targetDirection = followTarget.transform.position - t.position;
+        Vector3 targetDirection = t.forward*2 - t.position;
 
         // The step size is equal to speed times frame time.
         float singleStep = 5 * Time.deltaTime;
@@ -129,11 +182,13 @@ public class Boids_prueba1 : MonoBehaviour
         Vector3 newDirection = Vector3.RotateTowards(t.forward, targetDirection, singleStep, 0.0f);
 
         // Calculate a rotation a step closer to the target and applies rotation to this object
-        newDirection = new Vector3(newDirection.x, 0,newDirection.z);
+        newDirection = new Vector3(newDirection.x, newDirection.y, newDirection.z);
 
-        t.rotation = Quaternion.LookRotation(newDirection);
-
+        t.rotation = Quaternion.LookRotation(t.position -t.forward *5);
+        // t.rotation = t.LookAt(t.forward * 5, Vector3.forward);
+        Debug.DrawLine(t.position, newDirection, Color.red, 10);
         return t.rotation;
+
     }
 
     private Vector3 Avoid_Obstacles (GameObject g)
@@ -149,19 +204,11 @@ public class Boids_prueba1 : MonoBehaviour
         {
             Vector3 dir = g.transform.TransformDirection(raysBoid[i]);
 
-            if (Physics.SphereCast (g.transform.position,2,dir,out hit,2))
+            if (!Physics.SphereCast (g.transform.position,0.7f,dir,out hit, 5, LayerMask.GetMask("BoidWalls")))
             {
                 
-                if (hit.distance >distance)
-                {
-                    dirFinal = dir;
-                    distance = hit.distance;
-                }
-            }
-            else
-            {
                 return dir;
-            }
+            }   
 
         }
         
@@ -171,22 +218,63 @@ public class Boids_prueba1 : MonoBehaviour
 
     private void generateRays()
     {
-        
-      
-        for (int j = 0; j < 4; j++)
-        {
-            this.transform.Rotate(0, j * 2, 0, Space.Self);
 
-            raysBoid.Add(this.transform.forward);
+
+        //for (int j = 0; j < 15; j++)
+        //{
+        //    this.transform.Rotate(0, j *3 , 0, Space.Self);
+
+        //    raysBoid.Add(this.transform.forward);
+        //    Debug.DrawRay(this.transform.position, this.transform.forward, Color.red, 10f);
+
+        //}
+        //for (int i = 0; i < 15; i++)
+        //{
+        //    this.transform.Rotate(i * 3, 0, 0, Space.Self);
+
+        //    raysBoid.Add(this.transform.forward);
+        //    Debug.DrawRay(this.transform.position, this.transform.forward, Color.red, 10f);
+
+        //}
+
+        float goldenRatio = (1 + Mathf.Sqrt(5)) / 2;
+        float angleIncrement = Mathf.PI * 2 * goldenRatio;
+
+        for(int i=0; i <100; i++){
+
+            float t = (float)i / 100;
+            float inclination = Mathf.Acos(1 - 2 * t);
+            float azimuth = angleIncrement * i;
+
+            float x = Mathf.Sin(inclination) * Mathf.Cos(azimuth);
+            float y = Mathf.Sin(inclination) * Mathf.Sin(azimuth);
+            float z = Mathf.Cos(inclination);
+            raysBoid.Add(new Vector3(x,y,z));
+
+
+            Debug.DrawRay(this.transform.position, new Vector3(x, y, z), Color.red, 10f);
 
         }
 
 
-      
+    }
+    //collision wegth 20
+    bool collisionBoid(Transform position)
+    {
+        RaycastHit hit;
+       // Debug.DrawRay(position.position,position.forward, Color.red, 10f);
+        if (Physics.SphereCast(position.position,0.7f,position.forward,out hit,5,LayerMask.GetMask("BoidWalls")))
+        {
+            print("muro");
+            return true;
+        }
+        
+        return false;
+    }
 
-        print(raysBoid.Count);
-
-       
-
+    private Vector3 clampForce (Vector3 vector, Vector3 vel)
+    {
+        Vector3 dir = vector.normalized * 5f-vel;
+        return Vector3.ClampMagnitude(dir , 25);
     }
 }

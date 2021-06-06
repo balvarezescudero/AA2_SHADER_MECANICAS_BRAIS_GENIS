@@ -1,0 +1,145 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+struct GameObjInf {
+
+    float3 position;
+    float3 velocity;
+    float speed;
+    float3 Separation;
+    float3 Alignment;
+    float3 Cohesion;
+};
+
+RWStructuredBuffer<GameObjInf> ResultBoid;
+
+float3 diff;
+float d;
+float3 steerSep = float3(0,0,0);
+float3 steerAlign = float3(0, 0, 0);
+float3 steerCohe = float3(0, 0, 0);
+
+float3 target;
+
+float3 desired = float3(0, 0, 0);
+float3 desiredTarget = float3(0, 0, 0);
+
+float3 sumAlign = float3(0, 0, 0);
+float3 sumCohe = float3(0, 0, 0);
+
+float maxspeed = 2;
+
+float counterSep=0;
+float counterAlign =0;
+float counterCohe=0;
+float deltaTime;
+float numObjs;
+
+[numthreads(128,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    //------------------------------------------
+    //Separation 
+    //------------------------------------------
+    //Escalado
+    for (int i = 0; i < numObjs; i++) {
+        d = distance(ResultBoid[id.x].position,ResultBoid[i].position);
+
+        if (d > 0 && d <3.f) {
+
+            diff = ResultBoid[id.x].position - ResultBoid[i].position;
+            normalize(diff);
+
+            diff = diff / d;
+
+            steerSep = steerSep + diff;
+            counterSep++;
+        }
+
+        if (d > 0 && d < 5.f) {
+            sumAlign = sumAlign + ResultBoid[i].velocity;
+            counterAlign++;
+
+            sumCohe = sumCohe + ResultBoid[i].position;
+            counterCohe++;
+        }
+    }
+    if (counterSep > 0) {
+        steerSep = steerSep / counterSep;
+    }
+
+    if (length(steerSep) > 0 ) {
+
+        normalize(steerSep);
+        steerSep = steerSep * 0.5f;
+
+        steerSep = steerSep;//- ResultBoid[id.x].velocity;
+       //Si eso poner un limite de vel
+       
+    }
+
+    //------------------------------------------
+    //Aligment
+    //------------------------------------------
+
+    if (counterAlign > 0 ) {
+        sumAlign = sumAlign / counterAlign;
+        normalize(sumAlign);
+        sumAlign = sumAlign * 0.5f;
+
+        steerAlign = sumAlign;//-ResultBoid[id.x].velocity;
+
+    }
+    else {
+        steerAlign = float3(0, 0, 0);
+    }
+
+    //------------------------------------------
+    //Cohesion
+    //------------------------------------------
+
+    if (counterCohe > 0) {
+        sumCohe = sumCohe / counterCohe;
+        
+        desired = sumCohe - ResultBoid[id.x].position;
+        normalize(desired);
+        desired = desired * 0.5f;
+
+        steerCohe = desired; //- ResultBoid[id.x].velocity;//desired; //
+
+    }
+    else {
+        steerCohe = float3(0, 0, 0);
+    }
+
+    
+    //------------------------------------------
+   //Target
+   //------------------------------------------
+    /*desiredTarget = target - ResultBoid[id.x].position;
+    normalize(desiredTarget);
+
+    
+
+    desiredTarget = desiredTarget * ResultBoid[id.x].speed;*/
+    //desiredTarget = desiredTarget - ResultBoid[id.x].velocity;
+    
+   //------------------------------------------
+   //Aplication
+   //------------------------------------------
+   // ResultBoid[id.x].velocity = desiredTarget * 0.2f + steerSep* 7 + steerCohe + steerAlign;// +steerSep * 0.5f; + steerAlign + steerCohe;
+
+    
+
+   // ResultBoid[id.x].position =  deltaTime * ResultBoid[id.x].velocity  + ResultBoid[id.x].position;
+    ResultBoid[id.x].Separation = steerSep;
+    ResultBoid[id.x].Alignment = steerAlign;
+    ResultBoid[id.x].Cohesion = steerCohe;
+    
+}
+

@@ -19,6 +19,25 @@ MonoBehaviour:
   blend:
     overrideState: 0
     value: 0.001
+--- !u!114 &-8172123116831052471
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: CustomPostproVignetteSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CustomPostproVignetteSettings
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  blend:
+    overrideState: 0
+    value: 1
 --- !u!114 &-7664798662955254434
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -76,6 +95,25 @@ MonoBehaviour:
   blend:
     overrideState: 0
     value: 1
+--- !u!114 &-5130487764463174547
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: CustomPostproPixelateSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CustomPostproPixelateSettings
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  blend:
+    overrideState: 0
+    value: 0.001
 --- !u!114 &-1364307872223891566
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -108,8 +146,8 @@ MonoBehaviour:
   m_Name: WaterPostpro
   m_EditorClassIdentifier: 
   settings:
-  - {fileID: 1872291306191344103}
-  - {fileID: 8882393748562920794}
+  - {fileID: -5130487764463174547}
+  - {fileID: 7340517327654208485}
 --- !u!114 &1331410097633328465
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -262,6 +300,25 @@ MonoBehaviour:
   blend:
     overrideState: 1
     value: 0.001
+--- !u!114 &7340517327654208485
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: CustomPostproVignetteSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CustomPostproVignetteSettings
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  blend:
+    overrideState: 0
+    value: 1
 --- !u!114 &7342370802245506366
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -299,6 +356,25 @@ MonoBehaviour:
     value: 1
   blend:
     overrideState: 0
+    value: 0.001
+--- !u!114 &8578210938182866723
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: CustomPostproPixelateSettings
+  m_EditorClassIdentifier: Assembly-CSharp::CustomPostproPixelateSettings
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  blend:
+    overrideState: 1
     value: 0.001
 --- !u!114 &8882393748562920794
 MonoBehaviour:
